@@ -5,6 +5,9 @@ Created on Sat Jun  6 13:23:58 2015
 @author: alexsutherland
 """
 
+import datetime
+import unicodedata
+
 def convertWeightToPounds(data):
     
     kgIndexes = data.weightUnit == 'kg'
@@ -33,16 +36,24 @@ def removeOutliersByColumn(data, columnName, minValue='', maxValue=''):
     return data
 
 def convertTimeElapsedToEpoch(data):
-    conversionFactors = {'mon': 2600000, 'mo': 2600000, 'day': 86400,'yea': 31504000, 'wee': 604800}
+    print 'Adding column for time elapsed in Epoch'
+    conversionFactors = {'mo': 2600000, 'da': 86400,'ye': 31504000, 'yr': 31504000, 'we': 604800}
     
-    data['TimeElapsedEpoch'] = data.apply(lambda x: x['TimeElapsed'] * conversionFactors[(x['TimeUnit'].lower()[0:3])] , axis=1)
+    data['timeElapsedEpoch'] = data.apply(lambda x: x['timeElapsed'] * conversionFactors[(x['timeUnit'].lower()[0:2])] , axis=1)
     
     return data
+
+def convertDateTimeToEpochTime(fullDatetime):
+    #print 'Adding column for post time in Epoch'
     
+    ymd = fullDatetime.split('T')[0]
+    splitTimeData = map(lambda x: int(x), ymd.split('-'))
+    return int(datetime.datetime(splitTimeData[0], splitTimeData[1], splitTimeData[2],0,0).strftime('%s'))
+
 def removeDataWithoutTimeUnit(data):
     initialRows = data.shape[0]    
     
-    dropIndexes = data['TimeUnit'].map(lambda x: x is None)
+    dropIndexes = data['timeUnit'].map(lambda x: x is None)
     dropIndexes = dropIndexes[dropIndexes == True].index.map(lambda x: int(x))
 
     data = data.drop(dropIndexes, axis=0)
@@ -52,7 +63,7 @@ def removeDataWithoutTimeUnit(data):
 
 def convertMaleFemaleToMF(data):
     print 'Converting coding to Male-->M and Female-->F'
-    data['Gender'] = data['Gender'].map(lambda x: x[0].upper())
+    data['gender'] = data['gender'].map(lambda x: x[0].upper())
     
     return data
     
@@ -66,4 +77,35 @@ def removeMissingWeightRows(data):
     
     print 'Removed ' + str(initialRows - data.shape[0]) + ' samples without WeightUnits. Shape: ' + str(data.shape)
 
+    return data
+
+def fillInMissingWeightUnit(data):
+
+    #Full in ones that mention lbs
+    dataWithMissingWeightUnit = data.ix[data['weightUnit'] == '',]
+    
+    initialRowsWithoutWeightUnit = dataWithMissingWeightUnit.shape[0]
+    
+    foundLbsArray = dataWithMissingWeightUnit.ix[dataWithMissingWeightUnit['title'].map(lambda x: True if x.lower().find('lb') > 0 else False),'title']
+    
+    data.ix[foundLbsArray.index,'weightUnit'] = 'lb'
+    
+    #Fill in data where the weight could not be kgs
+    dataWithMissingWeightUnit = data.ix[data['weightUnit'] == '',]
+    
+    largeWeightArray = dataWithMissingWeightUnit.ix[dataWithMissingWeightUnit['startWeight'].map(lambda x: True if x > 140 else False),'title']
+    
+    data.ix[largeWeightArray.index,'weightUnit'] = 'lb'
+    
+    finalRowsWithoutWeightUnit = data.ix[data['weightUnit'] == '',].shape[0]
+
+    print 'Filled in ' + str(initialRowsWithoutWeightUnit - finalRowsWithoutWeightUnit) + ' samples with new WeightUnits. Shape: ' + str(data.shape)
+    
+    return data
+
+def cleanTitles(data):
+    
+    data['title'] = data['title'].map(lambda x: unicodedata.normalize('NFKD', unicode(x, 'utf-8')).encode('ascii','ignore'))
+    data['userText'] = data['userText'].map(lambda x: unicodedata.normalize('NFKD', unicode(x, 'utf-8')).encode('ascii','ignore'))
+    
     return data

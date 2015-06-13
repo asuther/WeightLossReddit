@@ -19,10 +19,10 @@ rcParams['figure.figsize'] = 15,7
 #fullData.Age.hist(bins=np.arange(fullData.Age.min()-5,fullData.Age.max()+5,1))
 
 
-plt.hist(cleanedData.Age,bins=np.arange(fullData.Age.min()-5,fullData.Age.max()+5,1), facecolor='g', alpha=0.8)
-plt.suptitle('Age Distribution of Posters on r/ProgressPics', fontsize=20)
-plt.xlabel('Age', fontsize=16)
-plt.ylabel('Count', fontsize=16)
+#plt.hist(fullData.Age,bins=np.arange(fullData.Age.min()-5,fullData.Age.max()+5,1), facecolor='g', alpha=0.8)
+#plt.suptitle('Age Distribution of Posters on r/ProgressPics', fontsize=20)
+#plt.xlabel('Age', fontsize=16)
+#plt.ylabel('Count', fontsize=16)
 
 
 #                                          Age
@@ -31,13 +31,25 @@ plt.ylabel('Count', fontsize=16)
 
 # In[40]:
 
-rcParams['figure.figsize'] = 15,15
+#rcParams['figure.figsize'] = 15,15
 
 #Generates a histogram for each column
-cleanedData.hist()
+#fullData.hist()
 
 
-# In[ ]:
+rcParams['figure.figsize'] = 7,4
 
+#Look at weight loss differences between ages and gender
+fig, ax = plt.subplots(4,1,1)
+ageGenderOnWeightChange = fullData.pivot_table('weightChange',rows='Age',cols='Gender', aggfunc='mean')
+plt.plot(np.arange(16,34), ageGenderOnWeightChange.ix[16:33,'M'], label='Male')
+plt.plot(np.arange(16,34), ageGenderOnWeightChange.ix[16:33,'F'], label='Female')
+legend = ax.legend(loc='upper left')
+plt.xlabel('Age', fontsize=14)
+plt.ylabel('Weight Change (lbs)', fontsize=14)
+plt.suptitle('Amount of weight lost by age')
 
+swGenderOnWeightChange = fullData.pivot_table('weightChange',rows='startWeight',cols='Gender', aggfunc='mean')
+plt.plot(swGenderOnWeightChange)
 
+plt.show()

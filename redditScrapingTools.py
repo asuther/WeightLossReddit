@@ -8,8 +8,9 @@ Created on Thu Jun  4 13:04:40 2015
 import urllib2
 from BeautifulSoup import BeautifulSoup
 import re
+import titleParsingTools as tpt
 
-baseURL = 'https://www.reddit.com/r/progresspics/search?restrict_sr=on&sort=relevance&t=all&syntax=cloudsearch&q=%28and+title:%27%27%29+timestamp:'
+baseURL = 'https://www.reddit.com/r/progresspics/search?restrict_sr=on&sort=relevance&limit=100&t=all&syntax=cloudsearch&q=%28and+title:%27%27%29+timestamp:'
 
 #TimeStamp Info
 timeStampJune2015 = 1433317589  #This is June 1st, 2015
@@ -55,9 +56,11 @@ def getPostTextInfo(postHTML):
     
     postTextData['postDateTime'] = str(postHTML.find('time').get('datetime'))
     
-    postTextData['postURL'] = str(postHTML.find('a',{'class':re.compile(r"title.*")}).get('href'))
+    postTextData['postURL'] = postHTML.find('a',{'class':re.compile(r"title.*")}).get('href')
     
-    return postTextData    
+    postTextData['postId'] =str(postHTML.get('data-fullname'))
+    
+    return postTextData
 
 def getPostTitle(postHTML):
     titleHTML = postHTML.find("a", {"class": "title may-blank "})
@@ -65,6 +68,8 @@ def getPostTitle(postHTML):
     title = str(titleHTML.contents[0])
     title = title.replace("”",'"')
     title = title.replace("’","'")
+    
+    return title
 
 def getPostTitleData(postTitle):
     titleData = {}
@@ -140,9 +145,20 @@ def getPostData(postHTML):
 
     #Get Title
     postTitle = getPostTitle(postHTML)    
-    postTitleData = getPostTitleData(postTitle)
+    postData['title'] = postTitle   
     
+    #new Title Parsing tools
+    titleData = tpt.getTitleInfo(postTitle)
+    if len(titleData) > 0:
+        postData.update(titleData)
+    else:
+        return -1
+
+    #Temporary Thing
+    #postTitleData = getPostTitleData(postTitle)
+    return postData    
     
+    '''
     if len(postTitleData) == 0:
         postTitleData = getPostTitleManual(postTitle)
         
@@ -152,6 +168,7 @@ def getPostData(postHTML):
         #print postTitleData
         return postData
     return -1
+    '''
     
 def getNextPageHTML(fullHTML):
     nextHref = fullHTML.find('span', {'class':'nextprev'}).find('a',{'rel':'nofollow next'}).get('href')
