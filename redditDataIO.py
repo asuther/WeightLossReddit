@@ -20,13 +20,9 @@ def exportDataToSQL(data):
 
 def loadData():
     
-    columnsToLoad = 'gender,age,height,startWeight, \
-                    endWeight,weightChange,timeElapsedEpoch,\
-                    postEpochTime, username,title'
-    
     sqlEngine = sqlalchemy.create_engine('mysql+pymysql://root@localhost/RedditWeightDatabase')
     con = sqlEngine.connect()
-    sqlResult = con.execute("SELECT "+columnsToLoad+" FROM redditWeightTable")
+    sqlResult = con.execute("SELECT * FROM redditWeightTable")
     
     df = pd.DataFrame(sqlResult.fetchall())
     df.columns = sqlResult.keys()

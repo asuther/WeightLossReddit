@@ -7,9 +7,10 @@ Created on Tue Jun  9 13:06:57 2015
 
 import DataCleaning
 import FeatureAdditions
-import DataExporting
+import redditDataIO
 import redditScraping
 #import userScraping
+import time
 
 def runScrapePipeline():
     
@@ -17,16 +18,20 @@ def runScrapePipeline():
     
     cleanedData = cleanExportPipeline(data)
     
-    userScraping.scrapeUserInfo(cleanedData['username'].unique())
+    featureCleanedData = FeatureAdditions.addFeatures(cleanedData)
+
+    redditDataIO.exportDataToSQL(featureCleanedData)
     
-    return cleanedData
+    #userScraping.scrapeUserInfo(cleanedData['username'].unique())
+    
+    return featureCleanedData
 
 def cleanExportPipeline(data):
     cleanedData = DataCleaning.cleanData(data)
     
     featureCleanedData = FeatureAdditions.addFeatures(cleanedData)
 
-    DataExporting.exportDataToSQL(featureCleanedData)
+    redditDataIO.exportDataToSQL(featureCleanedData)
     
     return featureCleanedData
 '''
@@ -35,5 +40,7 @@ def getUserInformation(data):
     
     userScraping.scrapeUserKarma(uniqueUserList)
    ''' 
-  
-#cleanExportPipeline(fullData)
+
+startTime = time.time()
+fullData = runScrapePipeline()
+endTime = time.time()

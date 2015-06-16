@@ -13,7 +13,7 @@ import time
 import redditDataIO as dataIO
 
 
-fullData = dataIO.loadData()
+#fullData = dataIO.loadData()
 
 userList = fullData['username'].unique()
 
@@ -31,12 +31,12 @@ scrapedSuccesses = []
 userData = [] 
 
 fullUserCommentData = []
-userID = 1374
-for index, username in enumerate(userList[1488:]):
+userID = 1
+for index, username in enumerate(userList):
     print str(index) + ' out of ' + str(len(userList)) + ' users scraped'
     newUser = True
     currentUserCommentData = []
-    requestURL = 'https://www.reddit.com/user/' + username + '/comments/.json'
+    requestURL = 'https://www.reddit.com/user/' + username + '/comments/.json?limit=100'
 
     print requestURL
     
@@ -54,12 +54,12 @@ for index, username in enumerate(userList[1488:]):
             break
         pageJSON = json.loads(page.read())        
         
-        scrapedAttempts += 25    #Each page has 25 posts
+        scrapedAttempts += 100    #Each page has 25 posts
         print str(scrapedAttempts) + ' scrapes'
         #Get the HTML for each post
         for comment in pageJSON['data']['children']:
             commentData = pd.Series(comment['data'])
-            currentData = commentData[['score','controversiality','body','subreddit']]
+            currentData = commentData[['score','controversiality','body','subreddit','link_title','link_id','created_utc']]
             currentData['username'] = username
             
             #If the username already exists
