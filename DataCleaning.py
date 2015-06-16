@@ -39,9 +39,7 @@ def cleanData(rawData):
     cleanedData = dct.fillInMissingWeightUnit(cleanedData)    
     
     cleanedData = dct.removeMissingWeightRows(cleanedData)
-    
-    cleanedData['postEpochTime'] = cleanedData['postDateTime'].map(dct.convertDateTimeToEpochTime)
-    
+        
     cleanedData = dct.cleanTitles(cleanedData)
     
     return cleanedData

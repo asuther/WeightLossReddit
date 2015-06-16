@@ -9,8 +9,10 @@ import urllib2
 from BeautifulSoup import BeautifulSoup
 import re
 import titleParsingTools as tpt
+import json
+import unicodedata
 
-baseURL = 'https://www.reddit.com/r/progresspics/search?restrict_sr=on&sort=relevance&limit=100&t=all&syntax=cloudsearch&q=%28and+title:%27%27%29+timestamp:'
+baseURL = 'https://www.reddit.com/r/progresspics/search/.json?restrict_sr=on&sort=relevance&limit=100&t=all&syntax=cloudsearch&q=%28and+title:%27%27%29+timestamp:'
 
 #TimeStamp Info
 timeStampJune2015 = 1433317589  #This is June 1st, 2015
@@ -18,54 +20,32 @@ timeStampJune2013 = 1370072789  #June 1st, 2013
 monthTime = 2592000             #This is the approximate timespan of a month in seconds
 postTitlePatternString = '(M|F|male|female)\s?\/\s?(\d+)\s?\/\s?(\d+)(?:\'|,|\’|foot)\s?(\d+)*(?:\"|\'\'|\s|inches|&quot;|\”)*.*(?:\[|\()(\d+)[\s]?(kg|lb)?[^\d]+(\d+)[\s]?(kg|lb|lbs)?(?:[^\d]*\=[^\d]*(\d+)[\s]?(kg|lb|lbs)?.*)?(?:\]|\))\s?(?:\[|\(|\s)[^\d]*(\d+)[.]?(\d+)?\s?(months|weeks|mo|month|week|year|years|days)?\s?(?:\)|\]|\s)\s?(.*)'
 
-def getHTMLData(timestampStart):
+def getJSONData(timestampStart):
     
     timestampRange = str(timestampStart) + '..' + str(timestampStart + monthTime)   #Creates a string of the time range
-    
+    fullURL = baseURL+timestampRange
     print baseURL + timestampRange
     #Generates reddit request and gets full HTML of the search page
-    req = urllib2.Request(baseURL+timestampRange)
+    req = urllib2.Request(fullURL)
     req.add_header('User-Agent', 'Python:Insight ProgressPic Weight Prediction (by /u/gahathat)')
     page = urllib2.urlopen(req)
-    fullHTML = BeautifulSoup(page.read())
+    pageJSON = json.loads(page.read())  
+    print page.read()
     
-    return fullHTML
+    return pageJSON, fullURL
     
-def getPostTextInfo(postHTML):
+def getPostTextInfo(postJSON):
     
     postTextData = {}
     
-    #Get Username        
-    usernameTemp = postHTML.find('a',{'class':re.compile(r"author.*")})
-    if not usernameTemp is None:
-        postTextData['username'] = str(usernameTemp.contents[0])
-    else:
-        postTextData['username'] = ''
-    
-    commentArray = str(postHTML.find('a',{'class':re.compile(r"comments.*")}).contents[0]).split(' ')
-    if len(commentArray) == 2:
-        postTextData['commentCount'] = int(commentArray[0])
-    else:
-        postTextData['commentCount'] = 0
-    
-    votes = postHTML.find('div',{'class':'score unvoted'}).contents[0]
-    if votes == '&bull;':
-        postTextData['votes'] = 0
-    else:
-        postTextData['votes'] = int(votes)
-    
-    postTextData['postDateTime'] = str(postHTML.find('time').get('datetime'))
-    
-    postTextData['postURL'] = postHTML.find('a',{'class':re.compile(r"title.*")}).get('href')
-    
-    postTextData['postId'] =str(postHTML.get('data-fullname'))
+    postTextData = postJSON[['author','created_utc','num_comments','over_18','permalink','score','url','name']]
     
     return postTextData
 
-def getPostTitle(postHTML):
-    titleHTML = postHTML.find("a", {"class": "title may-blank "})
+def getPostTitle(postJSON):
+    titleUnparsed = postJSON['title']
     
-    title = str(titleHTML.contents[0])
+    title = str(unicodedata.normalize('NFKD', titleUnparsed).encode('ascii','ignore'))
     title = title.replace("”",'"')
     title = title.replace("’","'")
     
@@ -121,6 +101,7 @@ def getPostTitleData(postTitle):
             titleData['TimeElapsed'] = float(stringNumber)
         
         titleData['TimeUnit'] = titleMatches.group(13)
+        
         titleData['userText'] = titleMatches.group(14)
 
               
@@ -135,16 +116,15 @@ def getPostTitleManual(postTitle):
     bodyMatches = bodyPatternFinder.match(postTitle)
     
 
-def getPostData(postHTML):
+def getPostData(postJSON):
     
     postData = {}  
     
-    
     #Get Post Text Info and merge with postData
-    postData.update(getPostTextInfo(postHTML))
+    postData.update(getPostTextInfo(postJSON))
 
     #Get Title
-    postTitle = getPostTitle(postHTML)    
+    postTitle = getPostTitle(postJSON)    
     postData['title'] = postTitle   
     
     #new Title Parsing tools
@@ -157,24 +137,16 @@ def getPostData(postHTML):
     #Temporary Thing
     #postTitleData = getPostTitleData(postTitle)
     return postData    
+
+def getNextPageJSON(nextCode, fullURL, scrapeCount):
+
+    fullURLAfter = fullURL + '&count=' + str(scrapeCount) + '&after=' + nextCode
+    #print fullURLAfter
     
-    '''
-    if len(postTitleData) == 0:
-        postTitleData = getPostTitleManual(postTitle)
-        
-        #print 'Post Parsing Failed'
-    if len(postTitleData) == 0:
-        postData.update(postTitleData)
-        #print postTitleData
-        return postData
-    return -1
-    '''
-    
-def getNextPageHTML(fullHTML):
-    nextHref = fullHTML.find('span', {'class':'nextprev'}).find('a',{'rel':'nofollow next'}).get('href')
-    req = urllib2.Request(nextHref)
+    #Generates reddit request and gets full JSON of the search page
+    req = urllib2.Request(fullURLAfter)
     req.add_header('User-Agent', 'Python:Insight ProgressPic Weight Prediction (by /u/gahathat)')
-    page = urllib2.urlopen(req)   
-    fullHTML = BeautifulSoup(page.read())
+    page = urllib2.urlopen(req)
+    pageJSON = json.loads(page.read())  
     
-    return fullHTML
+    return pageJSON
