@@ -13,9 +13,9 @@ import time
 import redditDataIO as dataIO
 
 
-#fullData = dataIO.loadData()
+fullData = pd.read_csv('Data/6.19.15-FullData.csv')
 
-userList = fullData['username'].unique()
+userList = fullData['author'].unique()
 
 #When restarting
 '''
@@ -86,7 +86,7 @@ for index, username in enumerate(userList):
 
         
         #Pause to throttle scraping rate
-        time.sleep(1.5)
+        time.sleep(2)
     #End while hasNextButton
     fullUserCommentData.extend(currentUserCommentData)
         

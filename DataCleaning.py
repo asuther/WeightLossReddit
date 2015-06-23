@@ -1,12 +1,5 @@
 import DataCleaningTools as dct
 import pandas as pd
- 
-'''
-columnNames = ['Gender','Age','Height','startWeight','endWeight','weightChange','weightUnit',
-              'TimeElapsed','TimeUnit','userText','username','title','commentCount',
-              'votes','postDateTime','postEpochTime']
-rawData = pd.DataFrame(data, columns=columnNames)
-'''
 
 def cleanData(rawData):
     

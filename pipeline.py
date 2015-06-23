@@ -16,9 +16,9 @@ def runScrapePipeline():
     
     data = redditScraping.scrapeData()
     
-    cleanedData = cleanExportPipeline(data)
+    #cleanedData = cleanExportPipeline(data)
     
-    featureCleanedData = FeatureAdditions.addFeatures(cleanedData)
+    featureCleanedData = FeatureAdditions.addFeatures(data)
 
     redditDataIO.exportDataToSQL(featureCleanedData)
     
