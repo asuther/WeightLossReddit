@@ -10,6 +10,8 @@ fullData = read.csv('Data/combinedSentiment.csv')
 truncatedData = subset(fullData, select=-c(score, timeElapsedMonths, weightChangeRate, endWeight, currentBMI, author,title,userText,X,name,url,permalink,created_utc,weightUnit,over_18,timeElapsed,timeUnit,timeElapsedEpoch,username))
 #Removing Collinear vars
 truncatedData = subset(truncatedData, select=-c(num_comments, previousBMI, fitnessCommentCount))
+truncatedData$weightChange = truncatedData$weightChange * -1
+#truncatedData$logStartWeight = log(truncatedData$startWeight)
 
 #truncatedData$Male = dummy.coef(maleLossData2$Gender)
 
@@ -21,12 +23,12 @@ totalSamples = dim(truncatedData)[1]
 lambdaList = c()
 RMSEList = c()
 
-for (i in 1:500) {
+for ( i in 1:50 ) {
   trainIndexes = sample(1 : totalSamples, totalSamples * 0.8)
   trainData = truncatedData[trainIndexes,]
   testData = truncatedData[-trainIndexes,]
   
-  lm.fit = lm(weightChange ~ startWeight+height, data = trainData)
+  lm.fit = lm(weightChange ~ startWeight:totalCommentCount + poly(startWeight,2) + height, data = trainData)
   
   lm.predict = predict(lm.fit, newdata = testData)
   
@@ -34,15 +36,18 @@ for (i in 1:500) {
   
   colorEncoding = ifelse(abs(rstudent(lm.fit)) > 3, 2, 1)
   
-  plot(testData[,'weightChange'], lm.predict, col=testData$gender)
-   
+  #plot(testData[,'weightChange'], lm.predict, xlab='Weight Lost (lbs)')
+  
   #print(paste('RMSE: ', RMSE))
   
   RMSEList = c(RMSE, RMSEList)
-
+  
 }
 
-plot(testData[,'weightChange'], lm.predict, col=testData$gender)
+
+plot(testData[,'weightChange'], lm.predict, xlab='Actual Weight Lost (lbs)', ylab='Predicted Weight Lost (lbs)',
+     main='Actual vs. Predicted Weight Lost using Linear Regression')
+abline(a=0,b=1)
 
 #hist(RMSEList)
 print(summary(lm.fit))

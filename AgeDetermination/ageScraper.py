@@ -7,13 +7,14 @@ Created on Sat Jun  6 15:27:38 2015
 import time
 import re
 import numpy as np
+import redditDataIO
 
 from selenium import webdriver
 
 def getBeforeAndAfterAge(imageURL):
     
     #imageURL = 'http://i.imgur.com/upUBBc2.jpg' #Guy
-    imageURL = 'http://i.imgur.com/d7sYj6J.jpg' #Girl
+    #imageURL = 'http://i.imgur.com/d7sYj6J.jpg' #Girl
     
     #driver = webdriver.Chrome()
     driver = webdriver.Chrome('/Users/alexsutherland/Documents/Programming/Python/chromedriver')
@@ -67,4 +68,7 @@ def getBeforeAndAfterAge(imageURL):
     #print ageData
     #time.sleep(2)
 
-getBeforeAndAfterAge('')
+
+
+for imageURL in imageURLList:
+    getBeforeAndAfterAge(imageURL)
